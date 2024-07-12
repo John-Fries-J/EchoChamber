@@ -27,7 +27,6 @@ function isLinkAllowed(link) {
     }
     return false;
 }
-
 module.exports = {
     name: Events.MessageCreate,
     async execute(message) {
@@ -41,7 +40,20 @@ module.exports = {
             const content = message.content.toLowerCase();
             const words = content.split(' ');
             const links = words.filter(word => word.startsWith('http://') || word.startsWith('https://'));
-
+            const hasAttachments = message.attachments.size > 0;
+            if (links.length === 0 && !hasAttachments) {
+                try {
+                    const embed = new EmbedBuilder()
+                        .setTitle('Feedback Requirement')
+                        .setDescription('Your feedback message must contain either a link or an attachment.')
+                        .setColor(blue);
+                    await message.author.send({ embeds: [embed] });
+                } catch (error) {
+                    console.error('Error sending DM to user about missing link/attachment:', error);
+                }
+                await message.delete();
+                return;
+            }
             if (links.length > 0) {
                 let allowed = true;
                 for (const link of links) {
@@ -64,12 +76,42 @@ module.exports = {
                     return;
                 }
             }
-
+            const userId = message.author.id;
+            if (!feedbackPoints[userId]) {
+                feedbackPoints[userId] = 0;
+            }
+            if (feedbackPoints[userId] < feedbackReq) {
+                try {
+                    const embed = new EmbedBuilder()
+                        .setTitle('Insufficient Feedback Points')
+                        .setDescription(`Sorry, but you need at least ${feedbackReq} points to submit your own feedback.`)
+                        .setColor(blue);
+                    await message.author.send({ embeds: [embed] });
+                } catch (error) {
+                    console.error('Error sending DM to user about insufficient points:', error);
+                }
+                await message.delete();
+                return;
+            }
+            feedbackPoints[userId] -= 2;
+            fs.writeFileSync(feedbackPointsFile, JSON.stringify(feedbackPoints, null, 4), 'utf-8');
             try {
                 const createdThread = await message.startThread({
                     name: `Feedback from ${message.author.tag}`,
                     autoArchiveDuration: 60,
                 });
+
+                let threadOwner;
+                try {
+                    threadOwner = await createdThread.fetchOwner();
+                } catch (error) {
+                    console.error('Error fetching thread owner:', error);
+                    return;
+                }
+                if (threadOwner.id === message.author.id) {
+                    await createdThread.delete();
+                    return; 
+                }
                 const embed = new EmbedBuilder()
                     .setDescription(`Reminder, each feedback you submit gives you one point towards submitting your own feedback. You must have ${feedbackReq} points to submit your own feedback.`)
                     .setColor(blue);
@@ -81,24 +123,27 @@ module.exports = {
         } else if (message.channel.isThread() && message.channel.parentId === feedbackID) {
             const userId = message.author.id;
             const threadId = message.channel.id;
-
+            let threadOwner;
+            try {
+                threadOwner = await message.channel.fetchOwner();
+            } catch (error) {
+                console.error('Error fetching thread owner:', error);
+                return;
+            }
+            if (message.author.id === userId) {
+                return; 
+            }
             if (!threadUsers[threadId]) {
                 threadUsers[threadId] = new Set();
             }
-
             if (!threadUsers[threadId].has(userId)) {
                 threadUsers[threadId].add(userId);
-
                 if (!feedbackPoints[userId]) {
                     feedbackPoints[userId] = 0;
                 }
-
                 const noPoints = feedbackPoints[userId] === 0;
-
                 feedbackPoints[userId]++;
-                
                 fs.writeFileSync(feedbackPointsFile, JSON.stringify(feedbackPoints, null, 4), 'utf-8');
-
                 if (noPoints) {
                     try {
                         const embed = new EmbedBuilder()
