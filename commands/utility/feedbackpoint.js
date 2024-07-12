@@ -27,7 +27,7 @@ module.exports = {
         const userPoints = feedbackPoints[userId] || 0;
 
 		const embed = new EmbedBuilder()
-			.setTitle('Points')
+			.setTitle('Feedback Points')
 			.setDescription(`You currently have ${userPoints}/${feedbackReq} points`)
 			.setColor(blue)
 			.setTimestamp();
