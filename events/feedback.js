@@ -38,7 +38,6 @@ module.exports = {
         if (!feedbackChannel) return;
 
         if (message.channel.id === feedbackChannel.id) {
-            const mainman = message.author.id;
             const content = message.content.toLowerCase();
             const words = content.split(' ');
             const links = words.filter(word => word.startsWith('http://') || word.startsWith('https://'));
@@ -109,15 +108,8 @@ module.exports = {
                     autoArchiveDuration: null,
                 });
 
-                let threadOwner;
-                try {
-                    threadOwner = await createdThread.fetchOwner();
-                } catch (error) {
-                    console.error('Error fetching thread owner:', error);
-                    return;
-                }
                 const embed = new EmbedBuilder()
-                    .setDescription(`Reminder, each feedback you submit gives you one point towards submitting your own music to get feedback on. You must have ${feedbackReq} points to submit your own feedback.`)
+                    .setDescription(`Reminder, each feedback you submit gives you one point towards submitting your own feedback. You must have ${feedbackReq} points to submit your own feedback.`)
                     .setColor(blue);
                 await createdThread.send({ embeds: [embed] });
                 feedbackPoints[userId] -= 2;
@@ -135,6 +127,8 @@ module.exports = {
                 console.error('Error fetching thread owner:', error);
                 return;
             }
+
+            // Check if the message author is not the thread owner
             if (message.author.id !== threadOwner.id) {
                 if (!threadUsers[threadId]) {
                     threadUsers[threadId] = new Set();
@@ -148,11 +142,11 @@ module.exports = {
                     }
 
                     const noPoints = feedbackPoints[userId] === 0;
-                    
-                    if (userId != mainman) {
+
                     feedbackPoints[userId]++;
+                    
                     fs.writeFileSync(feedbackPointsFile, JSON.stringify(feedbackPoints, null, 4), 'utf-8');
-                }
+
                     if (noPoints) {
                         try {
                             const embed = new EmbedBuilder()
