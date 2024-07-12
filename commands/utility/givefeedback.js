@@ -1,6 +1,7 @@
 const fs = require('fs');
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { blue } = require('../../colors.json');
+const { modRole } = require('../../config.json');
 
 const feedbackPointsFile = './feedbackpoints.json';
 
@@ -23,6 +24,9 @@ module.exports = {
         .setDescription('Gives 2 points to the specified user')
         .addUserOption(option => option.setName('user').setDescription('The user to give points to').setRequired(true)),
     async execute(interaction) {
+        if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator) && !interaction.member.roles.cache.has(modRole)) {
+            return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+        }
         const targetUser = interaction.options.getUser('user');
 
         if (!targetUser) {
