@@ -35,10 +35,7 @@ module.exports = {
                     name: `Feedback from ${message.author.tag}`,
                     autoArchiveDuration: 60,
                 });
-
                 const embed = new EmbedBuilder()
-                    .setTitle(`Feedback from ${message.author.tag}`)
-                    .setThumbnail(message.author.displayAvatarURL())
                     .setDescription(`Reminder, each feedback you submit gives you one point towards submitting your own feedback. You must have ${feedbackReq} points to submit your own feedback.`)
                     .setColor(blue);
 
@@ -60,16 +57,25 @@ module.exports = {
                 if (!feedbackPoints[userId]) {
                     feedbackPoints[userId] = 0;
                 }
+
+                const noPoints = feedbackPoints[userId] === 0;
+
                 feedbackPoints[userId]++;
                 
                 fs.writeFileSync(feedbackPointsFile, JSON.stringify(feedbackPoints, null, 4), 'utf-8');
 
-                const embed = new EmbedBuilder()
-                    .setTitle(`Feedback Acknowledged`)
-                    .setDescription(`Thank you for your feedback, <@${message.author.id}>! You now have ${feedbackPoints[userId]} feedback points.`)
-                    .setColor(blue);
-
-                await message.author.send({ embeds: [embed] });
+                if (noPoints) {
+                    try {
+                        const embed = new EmbedBuilder()
+                        .setTitle(`Congratulations you have given your first piece of feedback! 🎉`)
+                        .setDescription(`On ${message.guild.name} we have a points system. In order to receive feedback on your projects, you must have ${feedbackReq} points. Currently you have ${feedbackPoints[userId]} point.`)
+                        .setColor(blue);
+                        await message.author.send({ embeds: [embed] });
+                    } catch (error) {
+                        console.error('Error sending DM to user:', error);
+                    }
+                }
+                return;
             }
         }
     }
