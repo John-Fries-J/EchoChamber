@@ -1,5 +1,6 @@
 const fs = require('fs');
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { feedbackReq } = require('../../config.json');
 const { blue } = require('../../colors.json');
 
 const feedbackPointsFile = './feedbackpoints.json';
@@ -27,10 +28,9 @@ module.exports = {
 
 		const embed = new EmbedBuilder()
 			.setTitle('Points')
-			.setDescription(`You currently have ${userPoints} points`)
+			.setDescription(`You currently have ${userPoints}/${feedbackReq} points`)
 			.setColor(blue)
 			.setTimestamp();
-
 		await interaction.reply({ embeds: [embed], epithermal: true});
 	},
 };
