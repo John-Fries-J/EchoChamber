@@ -5,24 +5,19 @@ const { blue } = require('../../colors.json');
 
 const feedbackPointsFile = './feedbackpoints.json';
 
-let feedbackPoints = {};
-
-function loadFeedbackPoints() {
-    try {
-        feedbackPoints = JSON.parse(fs.readFileSync(feedbackPointsFile, 'utf-8'));
-    } catch (error) {
-        console.error('Error loading feedback points:', error);
-        feedbackPoints = {};
-    }
-}
-
-loadFeedbackPoints();
-
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('feedback')
 		.setDescription('Replies with the user\'s points'),
 	async execute(interaction) {
+        let feedbackPoints = {};
+        try {
+            feedbackPoints = JSON.parse(fs.readFileSync(feedbackPointsFile, 'utf-8'));
+        } catch (error) {
+            console.error('Error loading feedback points:', error);
+            feedbackPoints = {};
+        }
+
         const userId = interaction.user.id;
         const userPoints = feedbackPoints[userId] || 0;
 
@@ -31,6 +26,7 @@ module.exports = {
 			.setDescription(`You currently have ${userPoints}/${feedbackReq} points`)
 			.setColor(blue)
 			.setTimestamp();
-		await interaction.reply({ embeds: [embed], epithermal: true});
+
+		await interaction.reply({ embeds: [embed], ephemeral: true });
 	},
 };
