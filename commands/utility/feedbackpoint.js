@@ -31,6 +31,6 @@ module.exports = {
 			.setColor(blue)
 			.setTimestamp();
 
-		await interaction.reply({ embeds: [embed] });
+		await interaction.reply({ embeds: [embed], epithermal: true});
 	},
 };
