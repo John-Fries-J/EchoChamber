@@ -12,6 +12,6 @@ module.exports = {
 		.setDescription(`Ping is: ${interaction.client.ws.ping}ms`)
 		.setColor(blue)
 		.setTimestamp();
-		await interaction.reply({ embeds: [embed] });
+		await interaction.reply({ embeds: [embed], epithermal: true});
 	},
 };
