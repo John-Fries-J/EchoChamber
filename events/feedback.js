@@ -27,6 +27,7 @@ function isLinkAllowed(link) {
     }
     return false;
 }
+
 module.exports = {
     name: Events.MessageCreate,
     async execute(message) {
@@ -37,10 +38,12 @@ module.exports = {
         if (!feedbackChannel) return;
 
         if (message.channel.id === feedbackChannel.id) {
+            const mainman = message.author.id;
             const content = message.content.toLowerCase();
             const words = content.split(' ');
             const links = words.filter(word => word.startsWith('http://') || word.startsWith('https://'));
             const hasAttachments = message.attachments.size > 0;
+            
             if (links.length === 0 && !hasAttachments) {
                 try {
                     const embed = new EmbedBuilder()
@@ -54,6 +57,7 @@ module.exports = {
                 await message.delete();
                 return;
             }
+
             if (links.length > 0) {
                 let allowed = true;
                 for (const link of links) {
@@ -76,10 +80,13 @@ module.exports = {
                     return;
                 }
             }
+
             const userId = message.author.id;
+
             if (!feedbackPoints[userId]) {
                 feedbackPoints[userId] = 0;
             }
+
             if (feedbackPoints[userId] < feedbackReq) {
                 try {
                     const embed = new EmbedBuilder()
@@ -93,12 +100,13 @@ module.exports = {
                 await message.delete();
                 return;
             }
-            feedbackPoints[userId] -= 2;
+
             fs.writeFileSync(feedbackPointsFile, JSON.stringify(feedbackPoints, null, 4), 'utf-8');
+
             try {
                 const createdThread = await message.startThread({
-                    name: `Feedback from ${message.author.tag}`,
-                    autoArchiveDuration: 60,
+                    name: `Give feedback to ${message.author.tag}`,
+                    autoArchiveDuration: null,
                 });
 
                 let threadOwner;
@@ -108,21 +116,18 @@ module.exports = {
                     console.error('Error fetching thread owner:', error);
                     return;
                 }
-                if (threadOwner.id === message.author.id) {
-                    await createdThread.delete();
-                    return; 
-                }
                 const embed = new EmbedBuilder()
-                    .setDescription(`Reminder, each feedback you submit gives you one point towards submitting your own feedback. You must have ${feedbackReq} points to submit your own feedback.`)
+                    .setDescription(`Reminder, each feedback you submit gives you one point towards submitting your own music to get feedback on. You must have ${feedbackReq} points to submit your own feedback.`)
                     .setColor(blue);
-
                 await createdThread.send({ embeds: [embed] });
+                feedbackPoints[userId] -= 2;
             } catch (error) {
                 console.error('Error handling feedback:', error);
             }
         } else if (message.channel.isThread() && message.channel.parentId === feedbackID) {
             const userId = message.author.id;
             const threadId = message.channel.id;
+
             let threadOwner;
             try {
                 threadOwner = await message.channel.fetchOwner();
@@ -130,29 +135,34 @@ module.exports = {
                 console.error('Error fetching thread owner:', error);
                 return;
             }
-            if (message.author.id === userId) {
-                return; 
-            }
-            if (!threadUsers[threadId]) {
-                threadUsers[threadId] = new Set();
-            }
-            if (!threadUsers[threadId].has(userId)) {
-                threadUsers[threadId].add(userId);
-                if (!feedbackPoints[userId]) {
-                    feedbackPoints[userId] = 0;
+            if (message.author.id !== threadOwner.id) {
+                if (!threadUsers[threadId]) {
+                    threadUsers[threadId] = new Set();
                 }
-                const noPoints = feedbackPoints[userId] === 0;
-                feedbackPoints[userId]++;
-                fs.writeFileSync(feedbackPointsFile, JSON.stringify(feedbackPoints, null, 4), 'utf-8');
-                if (noPoints) {
-                    try {
-                        const embed = new EmbedBuilder()
-                            .setTitle(`Congratulations you have given your first piece of feedback! 🎉`)
-                            .setDescription(`On ${message.guild.name} we have a points system. In order to receive feedback on your projects, you must have ${feedbackReq} points. Currently you have ${feedbackPoints[userId]} point.`)
-                            .setColor(blue);
-                        await message.author.send({ embeds: [embed] });
-                    } catch (error) {
-                        console.error('Error sending DM to user:', error);
+
+                if (!threadUsers[threadId].has(userId)) {
+                    threadUsers[threadId].add(userId);
+
+                    if (!feedbackPoints[userId]) {
+                        feedbackPoints[userId] = 0;
+                    }
+
+                    const noPoints = feedbackPoints[userId] === 0;
+                    
+                    if (userId != mainman) {
+                    feedbackPoints[userId]++;
+                    fs.writeFileSync(feedbackPointsFile, JSON.stringify(feedbackPoints, null, 4), 'utf-8');
+                }
+                    if (noPoints) {
+                        try {
+                            const embed = new EmbedBuilder()
+                                .setTitle(`Congratulations you have given your first piece of feedback! 🎉`)
+                                .setDescription(`On ${message.guild.name} we have a points system. In order to receive feedback on your projects, you must have ${feedbackReq} points. Currently you have ${feedbackPoints[userId]} point.`)
+                                .setColor(blue);
+                            await message.author.send({ embeds: [embed] });
+                        } catch (error) {
+                            console.error('Error sending DM to user:', error);
+                        }
                     }
                 }
             }
