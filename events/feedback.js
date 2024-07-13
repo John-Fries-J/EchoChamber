@@ -86,7 +86,7 @@ module.exports = {
                 feedbackPoints[userId] = 0;
             }
 
-            if (feedbackPoints[userId] < feedbackReq) {
+            if (feedbackPoints[userId] < 2) { // I'm an idiot. It was checking for a string not a number. THIS HAS TO BE CHANGE TO CHANGE THE REQUIREMENT
                 try {
                     const embed = new EmbedBuilder()
                         .setTitle('Insufficient Feedback Points')
@@ -127,8 +127,6 @@ module.exports = {
                 console.error('Error fetching thread owner:', error);
                 return;
             }
-
-            // Check if the message author is not the thread owner
             if (message.author.id !== threadOwner.id) {
                 if (!threadUsers[threadId]) {
                     threadUsers[threadId] = new Set();
