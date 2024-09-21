@@ -86,18 +86,17 @@ module.exports = {
                 feedbackPoints[userId] = 0;
             }
 
-            if (feedbackPoints[userId] < 2) { // I'm an idiot. It was checking for a string not a number. THIS HAS TO BE CHANGE TO CHANGE THE REQUIREMENT
+            if (feedbackPoints[userId] < 2) {
                 try {
-                    const embed = new EmbedBuilder()
-                        .setTitle('Insufficient Feedback Points')
-                        .setDescription(`Sorry, but you need at least ${feedbackReq} points to submit your own feedback.`)
-                        .setColor(blue);
-                    await message.author.send({ embeds: [embed] });
+                    console.log('okay')
+                    // const embed = new EmbedBuilder()
+                    //     .setTitle('Insufficient Feedback Points')
+                    //     .setDescription(`Sorry, but you need at least ${feedbackReq} points to submit your own feedback.`)
+                    //     .setColor(blue);
+                    // await message.author.send({ embeds: [embed] });
                 } catch (error) {
                     console.error('Error sending DM to user about insufficient points:', error);
                 }
-                await message.delete();
-                return;
             }
 
             fs.writeFileSync(feedbackPointsFile, JSON.stringify(feedbackPoints, null, 4), 'utf-8');
@@ -112,7 +111,7 @@ module.exports = {
                     .setDescription(`Reminder, each feedback you submit gives you one point towards submitting your own feedback. You must have ${feedbackReq} points to submit your own feedback.`)
                     .setColor(blue);
                 await createdThread.send({ embeds: [embed] });
-                feedbackPoints[userId] -= 2;
+                // feedbackPoints[userId] -= 2;
             } catch (error) {
                 console.error('Error handling feedback:', error);
             }
